@@ -1,10 +1,11 @@
 Attribute VB_Name = "aux_Interpolate"
-' THIS IS THE SECOND VERSION OF MY INTERPOLATE FUNCTION, now the search is not done row by row.
+' THIS IS THE SECOND.ONE VERSION OF MY INTERPOLATE FUNCTION, now the search is not done row by row.
+' revisited to define parameter allowing to change behaviour in text interpolation.
 ' This version has been revisited to make variable names easier to read
 
 
 
-Public Function INTERPOLATE(Optional ByVal data_range As Variant = "", Optional ByVal input_value As Variant = "", Optional ByVal input_column As Integer = 0, Optional ByVal output_column As Integer = 0, Optional ByVal alternative_sheet As String = "this:sheet")
+Public Function INTERPOLATE(Optional ByVal data_range As Variant = "", Optional ByVal input_value As Variant = "", Optional ByVal input_column As Integer = 0, Optional ByVal output_column As Integer = 0, Optional ByVal alternative_sheet As String = "this:sheet", Optional text_interpolation As Integer = 0)
     '
 If TypeName(data_range) <> "Range" Then
     If data_range = "" And input_value = "" And input_column = 0 And OutputColum = 0 And alternative_sheet = "this:sheet" Then
@@ -24,17 +25,30 @@ If alternative_sheet = "this:sheet" Then
     alternative_sheet = ""
 End If
 
-    INTERPOLATE = INTERPOLAR(data_range, input_value, input_column, output_column, alternative_sheet)
+    INTERPOLATE = INTERPOLAR(data_range, input_value, input_column, output_column, alternative_sheet, text_interpolation)
 End Function
 
 
-' funcion interpolar a partir de datos en una tabla
-' el primer argumento es el rango de celdas, escrito como string "A1:J35" o como rango
-' el segundo argumento es el valor de entrada que hay que interpolar
-' el tercer argumento es la posicion de la columna de los valores de entrada, es pcional y por defecto es 1
-' el cuarto argumento es la posiciãn de la culumna de los valores de salida, es opcional y por defecto es la siguiente columna
+' Función para interpolar a partir de datos en una tabla, ignora celdas vacías y las columnas de entrada y salida son cambiables por el usuario
+' Argumentos:
+'   1) rango_datos: rango
+'        Es el rango de celdas, escrito como string "A1:J35" o como rango seleccionado en la hoja.
+'   2) valor_entrada: número o texto
+'        Es el valor a buscar en la tabla, el valor que hay que interpolar.
+'   3) columna_entrada: entero, opcional
+'       Es la posicion de la columna de los valores de entrada, es opcional.
+'       Por defecto es la primera columna de la tabla
+'   4) columna_salida: entero, opcional
+'       Es la posición de la columna de los valores de salida, es opcional.
+'       Por defecto es la columna siguiente a la columna del tercer parámetro (columna_entrada), o la columna anterior en caso que columna_entrada sea la última columna de la tabla.
+'   5) interpolacion_texto: entero, opcional
+'       Únicamente afecta la búsqueda en tablas en que la columna de salida contiene texto (no númerica).
+'       Permite modificar el resultado de la búsqueda cuando el valor_entrada no está explícito en la columna_entrada, y deberá interpolarse. Las siguuentes opciones están disponibles:
+'          -1 : el resultado será el valor anterior al valor_entrada, es decir, el valor anterior en el orden de la tabla.
+'           0 : devuelve un texto indicativo de entre cuales valores (de salida) se encuentra el valor buscado, por ejemplo "between AAA and BBB".
+'           1 : el resultado será el valor siguiente al valor_entrada, es decir, el valor posterios en el orden de la tabla.
 
-Public Function INTERPOLAR(ByVal rango_datos As Variant, ByVal valor_entrada As Variant, Optional ByVal columna_entrada As Integer = 0, Optional ByVal columna_salida As Integer = 0, Optional ByVal hoja_alternativa As String = "esta:hoja")
+Public Function INTERPOLAR(ByVal rango_datos As Variant, ByVal valor_entrada As Variant, Optional ByVal columna_entrada As Integer = 0, Optional ByVal columna_salida As Integer = 0, Optional ByVal hoja_alternativa As String = "esta:hoja", Optional interpolacion_texto As Integer = 0)
 
 Dim InRow, InCol, InTop, InBot, InLeft, InRight, InPos, InRows, PosShift As Long
 Dim r, l As Long
@@ -198,7 +212,8 @@ If (IsNumeric(valor_entrada) = True Or IsDate(valor_entrada) = True) And columna
                 InX1 = Sheets(hoja_alternativa).Cells(InPos + PosShift, columna_entrada)
                 InBotNew = InPos + PosShift
             Else
-                INTERPOLAR = "ERROR ni mayor ni menor"
+                'ERROR ni mayor ni menor
+                INTERPOLAR = CVErr(xlErrValue)
                 Exit Function
             End If
         Else
@@ -230,7 +245,8 @@ If (IsNumeric(valor_entrada) = True Or IsDate(valor_entrada) = True) And columna
                 InX1 = Sheets(hoja_alternativa).Cells(InPos + PosShift, columna_entrada)
                 InBotNew = InPos + PosShift
             Else
-                INTERPOLAR = "ERROR ni mayor ni menor"
+                'ERROR ni mayor ni menor
+                INTERPOLAR = CVErr(xlErrValue)
                 Exit Function
             End If
         End If
@@ -266,28 +282,18 @@ If (IsNumeric(valor_entrada) = True Or IsDate(valor_entrada) = True) And columna
         InPos = Int(InBotNew - (InBotNew - InTopNew) / (InXBotNew - InXTopNew) * (InXBotNew - valor_entrada))
             
         
-' experimental, para buscar en tablas con celdas vacias:
+' para buscar en tablas con celdas vacias:
         
-        'TestVar = IsEmpty(Sheets(hoja_alternativa).Cells(InPos, columna_salida))
-        'InYPos = Sheets(hoja_alternativa).Cells(InPos, columna_salida)
         While IsEmpty(Sheets(hoja_alternativa).Cells(InPos, columna_salida)) = True And InPos - 1 >= InTopNew
             InPos = InPos - 1
-            'TestVar = IsEmpty(Sheets(hoja_alternativa).Cells(InPos, columna_salida))
-            'InYPos = Sheets(hoja_alternativa).Cells(InPos, columna_salida)
         Wend
         While IsEmpty(Sheets(hoja_alternativa).Cells(InPos, columna_salida)) = True And InPos < InBotNew
             InPos = InPos + 1
-            'TestVar = IsEmpty(Sheets(hoja_alternativa).Cells(InPos, columna_salida))
-            'InYPos = Sheets(hoja_alternativa).Cells(InPos, columna_salida)
         Wend
         
-        PosShift = 1 ' en caso de anular el experimento hay que dejar esta linea
-        'TestVar = IsEmpty(Sheets(hoja_alternativa).Cells(InPos + PosShift, columna_salida))
-        'InYPos = Sheets(hoja_alternativa).Cells(InPos + PosShift, columna_salida)
+        PosShift = 1
         While IsEmpty(Sheets(hoja_alternativa).Cells(InPos + PosShift, columna_salida)) = True And (InPos + PosShift + 1) <= InBotNew
             PosShift = PosShift + 1
-            'TestVar = IsEmpty(Sheets(hoja_alternativa).Cells(InPos + PosShift, columna_salida))
-            'InYPos = Sheets(hoja_alternativa).Cells(InPos + PosShift, columna_salida)
         Wend
         
         
@@ -332,15 +338,15 @@ Else
     If InXStr = valor_entrada Then
         InOut = Sheets(hoja_alternativa).Cells(InPos, columna_salida)
     Else
-        InOut = "Not Found"
+        'InOut = "Not Found"
+        INTERPOLAR = CVErr(xlErrNA)
+        Exit Function
     End If
 
     INTERPOLAR = InOut
-
     Exit Function
 
 End If
-
 
 
 
@@ -359,6 +365,10 @@ ElseIf (InX0 - valor_entrada) * (InX1 - valor_entrada) < 0 Then
         
     If IsNumeric(InY0) = True And IsNumeric(InY1) = True Then
         InOut = InY0 + (valor_entrada - InX0) / (InX1 - InX0) * (InY1 - InY0)
+    ElseIf interpolacion_texto = -1 Then
+        InOut = InY0
+    ElseIf interpolacion_texto = 1 Then
+        InOut = InY1
     Else
         InOut = "between " & InY0 & " and " & InY1
     End If
@@ -371,8 +381,17 @@ ElseIf InPos + PosShift = InBot Or InPos = InTop Then
         InY1 = Sheets(hoja_alternativa).Cells(InTopNew + PosShift, columna_salida)
         InX0 = Sheets(hoja_alternativa).Cells(InTopNew, columna_entrada)
         InX1 = Sheets(hoja_alternativa).Cells(InTopNew + PosShift, columna_entrada)
-
-        InOut = InY0 + (valor_entrada - InX0) / (InX1 - InX0) * (InY1 - InY0)
+        
+        If IsNumeric(InY0) = True And IsNumeric(InY1) = True Then
+            InOut = InY0 + (valor_entrada - InX0) / (InX1 - InX0) * (InY1 - InY0)
+        ElseIf interpolacion_texto = -1 Then
+            INTERPOLAR = CVErr(xlErrNull)
+            Exit Function
+        ElseIf interpolacion_texto = 1 Then
+            InOut = InY0
+        Else
+            InOut = "before " & InY0
+        End If
         
     Else
 ' extrapolando por la base de la tabla
@@ -381,12 +400,22 @@ ElseIf InPos + PosShift = InBot Or InPos = InTop Then
         InX0 = Sheets(hoja_alternativa).Cells(InBotNew - PosShift, columna_entrada)
         InX1 = Sheets(hoja_alternativa).Cells(InBotNew, columna_entrada)
 
-        InOut = InY0 + (valor_entrada - InX0) / (InX1 - InX0) * (InY1 - InY0)
+        If IsNumeric(InY0) = True And IsNumeric(InY1) = True Then
+            InOut = InY0 + (valor_entrada - InX0) / (InX1 - InX0) * (InY1 - InY0)
+        ElseIf interpolacion_texto = -1 Then
+            InOut = InY0
+        ElseIf interpolacion_texto = 1 Then
+            INTERPOLAR = CVErr(xlErrNull)
+            Exit Function
+        Else
+            InOut = "after " & InY1
+        End If
         
     End If
 Else
 ' NPI
-   InOut = "error"
+   INTERPOLAR = CVErr(xlErrValue)
+   Exit Function
 
 End If
 

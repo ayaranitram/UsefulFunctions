@@ -25,6 +25,10 @@ within the output column values, interpolating the input value in the input colu
 - *input_column*: the column where to look for the *input_value*. By default is the first column of the table.
 - *output_column*: the column where to extract the output value. By default, the column to the right of the *input_colum*, or to the left of the *input_column* if *input_column* is the last column of the table.
 - *alternative_sheet*: to apply the search and interpolation from a table in another sheet. Useful when making a summary table that collects data from several other sheets.
+- *text_interpolation*: to manage what to return when working with labels on a table, when not able to find the exact *input_value* in the *data_range* table:
+  - -1 : will return the label found before the *input_value* 
+  -  0 : will return a text indicating the labels limiting the searched *input_value*, i.e. "between AAA and BBB".
+  -  1 : will return the label found after the *input_value* 
 
 ## `NUMBERinTEXT(text, [decimal_symbol], [thousand_separator], [negative_sign])`
 Returns the first numerical value found in a text.  
